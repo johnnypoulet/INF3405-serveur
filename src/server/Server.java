@@ -71,7 +71,7 @@ public class Server {
 		}
 		finally
 		{
-			System.out.println("Merci d'avoir utilisé PolySobel. À la prochaine!");
+			System.out.println("Merci d'avoir utilis?? PolySobel. ?? la prochaine!");
 			listener.close();
 		}
 	}
