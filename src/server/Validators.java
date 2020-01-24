@@ -75,7 +75,7 @@ public class Validators {
 		writer.close();
 	}
 	
-	public static void manageFile() throws Exception {
+	public static void manageCredentials() throws Exception {
 		File file = new File(path);
 		// Le fichier existe deja
 		if (file.exists()) {

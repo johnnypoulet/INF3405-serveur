@@ -13,44 +13,24 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 
 public class Server {
 	private static ServerSocket listener;
+	private static boolean userLoggedIn = false;
 
 	public static void main(String[] args) throws Exception {
+		System.out.println("Bienvenue dans l'application PolySobel - Serveur! (Copyright Derek Bernard & Jean-Olivier Dalphond 2020)");
+		
 		int clientNumber = 0;
 		int serverPort = 0;
 		String serverAddress = "";
-		
-		Scanner keyboard = new Scanner(System.in);
-		
-		// Entrez l'adresse IP
-		System.out.println("Entrez l'adresse IP du poste:");
-		String serverAddressIn = keyboard.next();
-		String[] tempAddr = serverAddressIn.split("\\.");
-		// Validate l'adresse
-		while (!Validators.validateIPAddress(tempAddr)) {
-			System.out.println("Entrez l'adresse IP du poste:");
-			serverAddressIn = keyboard.next();
-			tempAddr = serverAddressIn.split("\\.");	
-		}
-		serverAddress = serverAddressIn;
-		
-		// Entrez le numero de port
-		System.out.println("Entrez le numero du port (entre 5000 et 5050): ");
-		int serverPortIn = keyboard.nextInt();
-		
-		// Validate le numero de port
-		while (!Validators.validatePortNumber(serverPortIn)) {
-			System.out.println("Entrez le numero du port (entre 5000 et 5050): ");
-			serverPortIn = keyboard.nextInt();
-		}
-		serverPort = serverPortIn;
-		
-		keyboard.close();
+        
+		serverAddress = Init.serverIP();
+		serverPort = Init.serverPort();
 
 		listener = new ServerSocket();
 		listener.setReuseAddress(true);
@@ -58,8 +38,7 @@ public class Server {
 		
 		listener.bind(new InetSocketAddress(serverIP, serverPort));
 		
-		
-		Validators.manageFile();
+		Validators.manageCredentials();
 		System.out.format("Le serveur fonctionne sur %s:%d%n", serverAddress, serverPort);
 		
 		try
@@ -71,7 +50,7 @@ public class Server {
 		}
 		finally
 		{
-			System.out.println("Merci d'avoir utilis?? PolySobel. ?? la prochaine!");
+			System.out.println("Merci d'avoir utilise PolySobel. A la prochaine!");
 			listener.close();
 		}
 	}
@@ -95,39 +74,44 @@ public class Server {
 				DataInputStream in = new DataInputStream(socket.getInputStream());
 				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 				String usernameIn = in.readUTF();
-				Boolean userExist = Validators.validateUsername(usernameIn);
-				out.writeBoolean(userExist);
+				Boolean userExists = Validators.validateUsername(usernameIn);
+				out.writeBoolean(userExists);
+				
 				String password = in.readUTF();
-				if(userExist)
-				{
-					out.writeBoolean(Validators.validatePassword(usernameIn, password));
+				if (userExists) {
+					if (Validators.validatePassword(usernameIn, password)) {
+						out.writeBoolean(true);
+						System.out.format("Usager existant %s s'est connecte. En attente d'une image...\n", usernameIn);
+					}
+				} else {
+					Validators.setPassword(usernameIn, password);
+					out.writeBoolean(true);
+					System.out.format("Usager nouveau %s s'est connecte. En attente d'une image...\n", usernameIn);
 				}
-				else
-				{
-					Validators.setPassword(usernameIn,password);
 				
-				}
-				System.out.format("Usager %s s'est connecte", usernameIn);
 				
-				System.out.println("Reception d'image");
-				byte[] inputImage= in.readAllBytes();
+				// Attente de la taille de l'image
+				int len = in.readInt();
 				
-				System.out.println("Image en traitement");
+				// Attente de l'image
+				System.out.format("Taille de l'image: %s. Reception d'image...\n", len);
+				byte[] inputImage = in.readNBytes(len);
 				
+				System.out.println("Image recue. Application du filtre Sobel... Veuillez patienter.");
 				InputStream inp = new ByteArrayInputStream(inputImage);
 				BufferedImage imageConverted = ImageIO.read(inp);
 				BufferedImage processedImaged = Sobel.process(imageConverted);
 				
-				//Image image = ImageIO.read(new File(fileName));
-				//BufferedImage buffered = (BufferedImage) image;
+				System.out.println("Image traitee. Transmission...");
 				ByteArrayOutputStream baOut= new ByteArrayOutputStream();
-				ImageIO.write(processedImaged,"png",baOut);
+				ImageIO.write(processedImaged, "png", baOut);
+				byte[] lenMod = ByteBuffer.allocate(4).putInt(baOut.size()).array();
+				System.out.println("lenMod = " + lenMod);
+				out.write(lenMod);
 				out.write(baOut.toByteArray());
 				out.flush();
-				System.out.println("Image transforme envoyer au client");
-				
-			} catch (IOException e)
-			{
+				System.out.println("Image envoyee au client.");
+			} catch (IOException e)	{
 				System.out.println("Erreur dans le traitement demande par le client # " + clientNumber + ": " + e);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
