@@ -128,6 +128,7 @@ public class Server {
 				try
 				{
 					socket.close();
+					Validators.addToCredentials();
 				}
 				catch (IOException e)
 				{

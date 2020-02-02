@@ -90,19 +90,22 @@ public class Validators {
 		// On doit creer le fichier
 		} else {
 			System.out.println("Fichier d'identifiants introuvable. Creation d'un nouveau fichier credentials.csv.");
-			FileWriter writer = new FileWriter(path);
-			credentials.forEach((username, password) -> {
-				try {
-					writer.append(username);
-					writer.append(",");
-					writer.append(password);
-					writer.append("\n");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			});
-			writer.close();
+			addToCredentials();
 		};
+	}
+	public static void addToCredentials() throws Exception{
+		FileWriter writer = new FileWriter(path);
+		credentials.forEach((username, password) -> {
+			try {
+				writer.append(username);
+				writer.append(",");
+				writer.append(password);
+				writer.append("\n");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		writer.close();
 	}
 	
 	public static String cleanIPAddressFormat(String input) throws Exception {
