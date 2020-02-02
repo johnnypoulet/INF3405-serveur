@@ -104,5 +104,11 @@ public class Validators {
 			writer.close();
 		};
 	}
+	
+	public static String cleanIPAddressFormat(String input) throws Exception {
+		String[] temp = input.split("\\/");
+		String[] temp2 = temp[1].split(":");
+		return temp2[0];
+	}
 }
 	

@@ -1,12 +1,10 @@
 package server;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -14,13 +12,13 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.Scanner;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 
 public class Server {
 	private static ServerSocket listener;
-	private static boolean userLoggedIn = false;
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("Bienvenue dans l'application PolySobel - Serveur! (Copyright Derek Bernard & Jean-Olivier Dalphond 2020)");
@@ -76,27 +74,37 @@ public class Server {
 				String usernameIn = in.readUTF();
 				Boolean userExists = Validators.validateUsername(usernameIn);
 				out.writeBoolean(userExists);
-				
 				String password = in.readUTF();
+				
 				if (userExists) {
 					if (Validators.validatePassword(usernameIn, password)) {
 						out.writeBoolean(true);
 						System.out.format("Usager existant %s s'est connecte. En attente d'une image...\n", usernameIn);
+					} else {
+						out.writeBoolean(false);
+						System.out.format("Usager existant %s: mot de passe refuse. \n", usernameIn);
+						return;
 					}
 				} else {
 					Validators.setPassword(usernameIn, password);
 					out.writeBoolean(true);
-					System.out.format("Usager nouveau %s s'est connecte. En attente d'une image...\n", usernameIn);
+					System.out.format("Nouvel usager %s s'est connecte. En attente d'une image...\n", usernameIn);
 				}
 				
-				// Attente de la taille de l'image
+				// Attente de la taille et du nom de l'image
 				int len = in.readInt();
+				String imageName = in.readUTF();
+				
+				// Obtention de la date
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd@HH:mm:ss");
+				Date now = new Date();
 				
 				// Attente de l'image
 				System.out.format("Taille de l'image: %s octets. Reception d'image...\n", len);
 				byte[] inputImage = in.readNBytes(len);
 				
-				System.out.println("Image recue.");
+				// Image recue
+				System.out.println("[" + usernameIn + " - " + Validators.cleanIPAddressFormat(socket.getRemoteSocketAddress().toString()) + ":" + socket.getLocalPort() + " - " + sdf.format(now) + "] : Image " + imageName + " recue pour traitement.");
 				InputStream inp = new ByteArrayInputStream(inputImage);
 				BufferedImage imageConverted = ImageIO.read(inp);
 				BufferedImage processedImage = Sobel.process(imageConverted);
