@@ -93,6 +93,8 @@ public class Validators {
 			addToCredentials();
 		};
 	}
+	
+	// TODO: on devrait vider (ou effacer?) le fichier avant d'ecrire la map dedans
 	public static void addToCredentials() throws Exception{
 		FileWriter writer = new FileWriter(path);
 		credentials.forEach((username, password) -> {

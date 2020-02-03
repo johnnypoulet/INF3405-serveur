@@ -120,7 +120,7 @@ public class Server {
 			} catch (IOException e)	{
 				System.out.println("Erreur dans le traitement demande par le client # " + clientNumber + ": " + e);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				System.out.println("exception Exception Server.java run try catch");
 				e.printStackTrace();
 			}
 			finally
@@ -133,6 +133,9 @@ public class Server {
 				catch (IOException e)
 				{
 					System.out.println("Impossible de fermer le socket.");
+				} catch (Exception e) {
+					System.out.println("exception Exception Server.java run finally catch");
+					e.printStackTrace();
 				}
 				System.out.println("Connexion avec le client # " + clientNumber + " fermee.");
 			}
