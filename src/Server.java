@@ -1,12 +1,14 @@
 package server;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -14,11 +16,11 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import javax.imageio.ImageIO;
 
 public class Server {
 	private static ServerSocket listener;
+	private static KeyboardHandler handler;
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("Bienvenue dans l'application PolySobel - Serveur! (Copyright Derek Bernard & Jean-Olivier Dalphond 2020)");
@@ -34,27 +36,62 @@ public class Server {
 		listener.setReuseAddress(true);
 		InetAddress serverIP = InetAddress.getByName(serverAddress);
 		
-		listener.bind(new InetSocketAddress(serverIP, serverPort));
+		try {
+			listener.bind(new InetSocketAddress(serverIP, serverPort));
+		} catch (Exception e) {
+			System.out.println("Erreur lors de la liaison du socket. Socket deja en utilisation? Sortie de l'application...");
+			listener.close();
+			System.exit(1);
+		}
 		
 		Validators.manageCredentials();
 		System.out.format("Le serveur fonctionne sur %s:%d%n", serverAddress, serverPort);
 		
+		handler = new KeyboardHandler(new BufferedReader(new InputStreamReader(System.in)));
+		handler.start();
 		try
 		{
 			while (true)
-			{
+			{	
 				new ClientHandler(listener.accept(), clientNumber++).start();
 			}
+		} catch (Exception e) {
 		}
 		finally
 		{
-			System.out.println("Merci d'avoir utilise PolySobel. A la prochaine!");
+			handler.close();
 			listener.close();
 		}
 	}
+
+	private static class KeyboardHandler extends Thread {
+		private BufferedReader reader;
+		
+		public KeyboardHandler(BufferedReader input) {
+			this.reader = input;
+		}
+		
+		public void run() {
+			System.out.println("Le serveur est en attente d'une connexion. Vous pouvez taper 'q' puis 'Entree' pour quitter.");
+			try {
+				if (reader.readLine().equalsIgnoreCase("q")) {
+					handler.close();
+					listener.close();
+					System.out.println("Merci d'avoir utilise PolySobel - Serveur. A la prochaine!");
+					System.exit(0);
+				}
+			} catch (IOException e) {
+				System.out.println("Exception levee lors de la capture du clavier.");
+				e.printStackTrace();
+			}
+		}
+		
+		public void close() throws IOException {
+			reader.close();
+		}
+	}
 	
-	private static class ClientHandler extends Thread
-	{
+	private static class ClientHandler extends Thread {
 		private Socket socket;
 		private int clientNumber;
 		

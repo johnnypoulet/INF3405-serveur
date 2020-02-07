@@ -52,27 +52,21 @@ public class Validators {
 	public static boolean validatePassword(String username, String password) throws Exception {
 		if (credentials.get(username).equals(password)) {
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	}
 	
 	public static void setPassword(String username, String password) throws Exception {
 		// On met a jour la map
 		credentials.put(username, password);
 		// On met a jour le fichier
-		FileWriter writer = new FileWriter(path);
-		credentials.forEach((k, v) -> {
-			try {
-				writer.append(k);
-				writer.append(",");
-				writer.append(v);
-				writer.append("\n");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		});
-		writer.close();
+		addToCredentials();
+	}
+	
+	public static String cleanIPAddressFormat(String input) throws Exception {
+		String[] temp = input.split("\\/");
+		String[] temp2 = temp[1].split(":");
+		return temp2[0];
 	}
 	
 	public static void manageCredentials() throws Exception {
@@ -94,26 +88,23 @@ public class Validators {
 		};
 	}
 	
-	// TODO: on devrait vider (ou effacer?) le fichier avant d'ecrire la map dedans
-	public static void addToCredentials() throws Exception{
+	public static void addToCredentials() throws Exception {
 		FileWriter writer = new FileWriter(path);
+		// On vide le fichier et ecrit la nouvelle map
+		writer.write("");
 		credentials.forEach((username, password) -> {
+			// Une ligne par username
 			try {
 				writer.append(username);
 				writer.append(",");
 				writer.append(password);
 				writer.append("\n");
 			} catch (IOException e) {
+				System.out.println("Erreur lors de l'écriture vers le fichier de credentials.");
 				e.printStackTrace();
 			}
 		});
 		writer.close();
-	}
-	
-	public static String cleanIPAddressFormat(String input) throws Exception {
-		String[] temp = input.split("\\/");
-		String[] temp2 = temp[1].split(":");
-		return temp2[0];
 	}
 }
 	
